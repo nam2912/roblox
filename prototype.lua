@@ -30,6 +30,14 @@ _G.DefaultSettings = false
 
 _G.TeamCheck = false
 _G.ESPVisible = true
+_G.TextColor = Color3.fromRGB(255, 80, 10)
+_G.TextSize = 14
+_G.Center = true
+_G.Outline = true
+_G.OutlineColor = Color3.fromRGB(0, 0, 0)
+_G.TextTransparency = 0.7
+_G.TextFont = Drawing.Fonts.UI
+
 _G.HighlightColor = Color3.fromRGB(255, 80, 10)
 _G.OutlineColor = Color3.fromRGB(0, 0, 0)
 _G.FillTransparency = 0.5
@@ -37,7 +45,8 @@ _G.OutlineTransparency = 0
 
 _G.DisableKey = Enum.KeyCode.Q
 
-local function createHighlightForPlayer(player)
+local function createESPForPlayer(player)
+    local ESP = Drawing.new("Text")
     local highlight = Instance.new("Highlight")
     highlight.Adornee = player.Character
     highlight.FillColor = _G.HighlightColor
@@ -47,37 +56,73 @@ local function createHighlightForPlayer(player)
     highlight.Enabled = _G.ESPVisible
     highlight.Parent = player.Character
 
-    local function updateHighlight()
+    local function updateESP()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            if _G.TeamCheck then
-                highlight.Enabled = Players.LocalPlayer.Team ~= player.Team and _G.ESPVisible
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+                local vector, onScreen = Camera:WorldToViewportPoint(head.Position)
+
+                ESP.Size = _G.TextSize
+                ESP.Center = _G.Center
+                ESP.Outline = _G.Outline
+                ESP.OutlineColor = _G.OutlineColor
+                ESP.Color = _G.TextColor
+                ESP.Transparency = _G.TextTransparency
+                ESP.Font = _G.TextFont
+
+                if onScreen then
+                    local part1 = player.Character.HumanoidRootPart.Position
+                    local part2 = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and Players.LocalPlayer.Character.HumanoidRootPart.Position or Vector3.new(0, 0, 0)
+                    local dist = (part1 - part2).Magnitude
+                    ESP.Position = Vector2.new(vector.X, vector.Y - 25)
+                    ESP.Text = ("(" .. tostring(math.floor(dist)) .. ") " .. player.Name .. " [" .. math.floor(player.Character.Humanoid.Health) .. "]")
+                    if _G.TeamCheck then
+                        ESP.Visible = Players.LocalPlayer.Team ~= player.Team and _G.ESPVisible
+                        highlight.Enabled = Players.LocalPlayer.Team ~= player.Team and _G.ESPVisible
+                    else
+                        ESP.Visible = _G.ESPVisible
+                        highlight.Enabled = _G.ESPVisible
+                    end
+                else
+                    ESP.Visible = false
+                    highlight.Enabled = false
+                end
             else
-                highlight.Enabled = _G.ESPVisible
+                ESP.Visible = false
+                highlight.Enabled = false
             end
         else
+            ESP.Visible = false
             highlight.Enabled = false
         end
     end
 
-    RunService.RenderStepped:Connect(updateHighlight)
+    RunService.RenderStepped:Connect(updateESP)
 
     player.CharacterRemoving:Connect(function()
+        ESP:Remove()
         highlight:Destroy()
     end)
 end
 
 local function onPlayerAdded(player)
     player.CharacterAdded:Connect(function()
-        createHighlightForPlayer(player)
+        createESPForPlayer(player)
     end)
     if player.Character then
-        createHighlightForPlayer(player)
+        createESPForPlayer(player)
     end
 end
 
 if _G.DefaultSettings then
     _G.TeamCheck = false
     _G.ESPVisible = true
+    _G.TextColor = Color3.fromRGB(40, 90, 255)
+    _G.TextSize = 14
+    _G.Center = true
+    _G.Outline = false
+    _G.OutlineColor = Color3.fromRGB(0, 0, 0)
+    _G.TextTransparency = 0.75
     _G.HighlightColor = Color3.fromRGB(40, 90, 255)
     _G.OutlineColor = Color3.fromRGB(0, 0, 0)
     _G.FillTransparency = 0.5
